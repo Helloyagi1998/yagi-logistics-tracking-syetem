@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yagi Logistics</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#0a1f44,#007BFF);
+  color:white;
+}
+
+.screen{
+  display:none;
+  min-height:100vh;
+  padding:20px;
+  flex-direction:column;
+  align-items:center;
+  overflow-y:auto;
+}
+
+.active{
+  display:flex;
+}
+
+.card{
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 18px;
+  padding: 20px;
+  margin: 12px 0;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transition: 0.3s;
+  width: 100%;
+  max-width: 420px;
+}
+
+.card:hover{
+  transform: translateY(-3px);
+}
+
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:none;
+  border-radius:8px;
+  font-size: 16px;
+}
+
+button{
+  background: linear-gradient(135deg, orange, #ff9500);
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+button:hover{
+  transform: scale(1.05);
+}
+
+.delete-btn {
+  background: #ff4444;
+  color: white;
+  margin-top: 10px;
+}
+
+h2 span{
+  color:yellow;
+}
+
+hr{
+  border:0;
+  border-top:1px solid rgba(255,255,255,0.2);
+  margin:10px 0;
+}
+
+.pending{
+  background: rgba(255,215,0,0.2);
+  color: gold;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.transit{
+  background: rgba(255,165,0,0.2);
+  color: orange;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.delivered{
+  background: rgba(0,255,100,0.2);
+  color: lightgreen;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.empty-state {
+  color: rgba(255,255,255,0.6);
+  font-style: italic;
+  padding: 20px 0;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.timeline p {
+  margin: 8px 0;
+  padding-left: 10px;
+  border-left: 3px solid #ff9500;
+}
+
+.timeline small {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85em;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>🚚 Yagi Logistics</h1>
+  <p style="opacity:0.7; margin:5px 0 0 0;">Fast • Reliable • Secure Delivery</p>
+</div>
+
+<div id="home" class="screen active">
+  <h2>Yagi <span>Logistics</span></h2>
+  <div class="card">
+    <button onclick="go('login')">Admin</button>
+    <button onclick="go('customer')">Track Package</button>
+  </div>
+</div>
+
+<div id="login" class="screen">
+  <div class="card">
+    <h3>Admin Login</h3>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <button onclick="go('home')">⬅ Back</button>
+  </div>
+</div>
+
+<div id="admin" class="screen">
+  <h2>📊 Admin Dashboard</h2>
+
+  <div class="card">
+    <h3>➕ Add New Parcel</h3>
+    <input id="pid" placeholder="Tracking ID (optional)">
+    <input id="pname" placeholder="Customer Name">
+    
+    <select id="pstatus">
+      <option>Pending</option>
+      <option>In Transit</option>
+      <option>Delivered</option>
+    </select>
+
+    <button onclick="addParcel()">Create Parcel</button>
+  </div>
+
+  <div class="card">
+    <h3>📦 Parcel Management</h3>
+    <div id="list"></div>
+  </div>
+
+  <button onclick="logout()">⬅ Logout</button>
+</div>
+
+<div id="customer" class="screen">
+  <div class="card">
+    <h3>Track Parcel</h3>
+    <input id="trackId" placeholder="Tracking ID">
+    <button onclick="track()">Track</button>
+    <p id="result"></p>
+    <button onclick="go('home')">⬅ Home</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script>
+// ==================== Firebase Config ====================
+var firebaseConfig = {
+  apiKey: "AIzaSyBVlxuIxDFLwVLSgPQO7KGgxYiW0IY6BDs",
+  authDomain: "yagiparcel.firebaseapp.com",
+  databaseURL: "https://yagiparcel-default-rtdb.firebaseio.com",
+  projectId: "yagiparcel",
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+// ==================== Global Variable ====================
+let parcels = [];
+
+// ==================== Auth State Listener ====================
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    if (document.getElementById("admin").classList.contains("active")) {
+      go("home");
+    }
+  }
+});
+
+// ==================== Navigation ====================
+function go(screen){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(screen).classList.add("active");
+}
+
+// ==================== Login ====================
+function login(){
+  let email = document.getElementById("email").value.trim();
+  let pass = document.getElementById("pass").value;
+
+  if (!email || !pass) {
+    alert("Please enter both email and password");
+    return;
+  }
+
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(() => {
+      go("admin");
+      document.getElementById("email").value = "";
+      document.getElementById("pass").value = "";
+    })
+    .catch((error) => {
+      alert("Login failed: " + error.message);
+    });
+}
+
+// ==================== Logout ====================
+function logout(){
+  firebase.auth().signOut().then(() => {
+    go("home");
+  }).catch((error) => {
+    alert("Logout error: " + error.message);
+  });
+}
+
+// ==================== Add New Parcel ====================
+function addParcel(){
+  let id = document.getElementById("pid").value.trim().toUpperCase() 
+           || "YAG" + Math.floor(100000 + Math.random()*900000);
+
+  let name = document.getElementById("pname").value.trim();
+  let status = document.getElementById("pstatus").value;
+
+  if(!name){
+    alert("Customer Name is required!");
+    return;
+  }
+
+  let now = new Date();
+  let etaDate = new Date();
+  etaDate.setDate(now.getDate() + 3);
+
+  db.ref("parcels/"+id).set({
+    id,
+    name,
+    status,
+    createdAt: now.toLocaleString(),
+    eta: etaDate.toDateString(),
+    history: [
+      { text: "Order Created", time: now.toLocaleString() }
+    ]
+  }).then(() => {
+    // === NEW ALERT WITH TRACKING LINK ===
+    let link = window.location.origin + window.location.pathname + "?track=" + id;
+    
+    alert(`Parcel Created 🚀\n\nTracking ID: ${id}\n\nDirect Tracking Link:\n${link}`);
+
+    // Clear the form
+    document.getElementById("pid").value = "";
+    document.getElementById("pname").value = "";
+    document.getElementById("pstatus").selectedIndex = 0;
+
+    document.getElementById("pid").focus();
+  }).catch((error) => {
+    alert("Error creating parcel: " + error.message);
+  });
+}
+
+// ==================== Update Status ====================
+function updateStatus(id, newStatus){
+  let statusText = {
+    "Pending": "Package Pending",
+    "In Transit": "Package In Transit",
+    "Delivered": "Package Delivered"
+  };
+
+  let now = new Date().toLocaleString();
+
+  db.ref("parcels/" + id).once("value", snap => {
+    let data = snap.val();
+    let history = data.history || [];
+
+    history.push({
+      text: statusText[newStatus],
+      time: now
+    });
+
+    db.ref("parcels/" + id).update({
+      status: newStatus,
+      history: history
+    });
+  });
+
+  alert("Status updated with timeline ✅");
+}
+
+// ==================== Delete Parcel ====================
+function deleteParcel(id){
+  if(confirm("Delete this parcel?")){
+    db.ref("parcels/" + id).remove();
+  }
+}
+
+// ==================== Render Parcels ====================
+function render(){
+  let list = document.getElementById("list");
+  list.innerHTML = "";
+
+  if(parcels.length === 0){
+    list.innerHTML = `<p class="empty-state">No parcels yet. Add one above 👆</p>`;
+    return;
+  }
+
+  parcels.forEach(p => {
+    let cls = p.status === "Pending" ? "pending" :
+              p.status === "In Transit" ? "transit" : "delivered";
+
+    list.innerHTML += `
+      <div class="card">
+        <b>${p.id}</b><br>
+        ${p.name}<br><br>
+        <span class="${cls}"><strong>${p.status}</strong></span><br><br>
+        
+        <select onchange="updateStatus('${p.id}', this.value)">
+          <option ${p.status==="Pending" ? "selected" : ""}>Pending</option>
+          <option ${p.status==="In Transit" ? "selected" : ""}>In Transit</option>
+          <option ${p.status==="Delivered" ? "selected" : ""}>Delivered</option>
+        </select>
+
+        <button onclick="deleteParcel('${p.id}')" class="delete-btn">❌ Delete</button>
+      </div>
+    `;
+  });
+}
+
+// ==================== Track Parcel ====================
+function track(){
+  let id = document.getElementById("trackId").value.trim().toUpperCase();
+  let res = document.getElementById("result");
+
+  let f = parcels.find(p => p.id === id);
+
+  if(f){
+    let timeline = "";
+
+    if(f.history && f.history.length > 0){
+      f.history.forEach(h => {
+        timeline += `<p>✔ ${h.text} <br><small>${h.time}</small></p>`;
+      });
+    } else {
+      timeline = "<p>No timeline available yet.</p>";
+    }
+
+    let today = new Date();
+    let eta = new Date(f.eta);
+
+    let deliveryNote = "";
+
+    if(f.status !== "Delivered"){
+      let diff = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
+
+      if(diff <= 0){
+        deliveryNote = "🚚 Out for delivery today!";
+      } else if(diff === 1){
+        deliveryNote = "📦 Arriving tomorrow";
+      } else {
+        deliveryNote = `⏳ ${diff} days remaining`;
+      }
+    }
+
+    res.innerHTML = `
+      <div class="card">
+        <h2>📦 ${f.id}</h2>
+        <p><strong>Customer:</strong> ${f.name}</p>
+        <p><strong>📅 Estimated Delivery:</strong> ${f.eta || "Calculating..."}</p>
+        <p>${deliveryNote}</p>
+        <hr>
+
+        <h4>📍 Delivery Timeline</h4>
+        <div class="timeline">
+          ${timeline}
+        </div>
+
+        <hr>
+
+        <p><strong>Current Status:</strong> 
+          <span class="${f.status==="Pending"?"pending": f.status==="In Transit"?"transit":"delivered"}">
+            ${f.status}
+          </span>
+        </p>
+      </div>
+    `;
+  } else {
+    res.innerHTML = `<p style="color:#ff6666; text-align:center; padding:15px;">
+      ❌ No parcel found with Tracking ID: <strong>${id}</strong>
+    </p>`;
+  }
+}
+
+// ==================== AUTO TRACK FROM URL (Improved) ====================
+window.onload = function(){
+  const params = new URLSearchParams(window.location.search);
+  const trackIdParam = params.get("track");
+
+  if(trackIdParam){
+    go("customer");
+    document.getElementById("trackId").value = trackIdParam.toUpperCase();
+
+    setTimeout(() => {
+      track();
+    }, 1000);
+  }
+};
+
+// ==================== Firebase Real-time Listener ====================
+db.ref("parcels").on("value", snap => {
+  parcels = [];
+  let data = snap.val();
+  if(data){
+    Object.keys(data).forEach(k => parcels.push(data[k]));
+  }
+  render();
+});
+
+</script>
+
+</body>
+</html>
