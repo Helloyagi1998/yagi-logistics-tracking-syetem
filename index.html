@@ -122,10 +122,28 @@ hr{
   color: rgba(255,255,255,0.7);
   font-size: 0.85em;
 }
+
+/* Toast Notification */
+#toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #00c853;
+  color: white;
+  padding: 14px 20px;
+  border-radius: 10px;
+  display: none;
+  z-index: 9999;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  font-weight: bold;
+}
 </style>
 </head>
 
 <body>
+
+<!-- Toast Notification -->
+<div id="toast"></div>
 
 <div class="header">
   <h1>🚚 Yagi Logistics</h1>
@@ -153,6 +171,15 @@ hr{
 <div id="admin" class="screen">
   <h2>📊 Admin Dashboard</h2>
 
+  <!-- New Overview Card -->
+  <div class="card">
+    <h3>📈 Overview</h3>
+    <p>Total Parcels: <b id="totalCount">0</b></p>
+    <p>Pending: <b id="pendingCount">0</b></p>
+    <p>In Transit: <b id="transitCount">0</b></p>
+    <p>Delivered: <b id="deliveredCount">0</b></p>
+  </div>
+
   <div class="card">
     <h3>➕ Add New Parcel</h3>
     <input id="pid" placeholder="Tracking ID (optional)">
@@ -165,6 +192,11 @@ hr{
     </select>
 
     <button onclick="addParcel()">Create Parcel</button>
+  </div>
+
+  <!-- Search Box -->
+  <div class="card">
+    <input id="searchBox" placeholder="🔍 Search by ID or Name" oninput="render()">
   </div>
 
   <div class="card">
@@ -217,6 +249,14 @@ firebase.auth().onAuthStateChanged(user => {
 function go(screen){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(screen).classList.add("active");
+}
+
+// ==================== Toast Function ====================
+function showToast(msg){
+  let t = document.getElementById("toast");
+  t.innerText = msg;
+  t.style.display = "block";
+  setTimeout(() => t.style.display = "none", 3000);
 }
 
 // ==================== Login ====================
@@ -276,16 +316,17 @@ function addParcel(){
       { text: "Order Created", time: now.toLocaleString() }
     ]
   }).then(() => {
-    // === NEW ALERT WITH TRACKING LINK ===
-    let link = window.location.origin + window.location.pathname + "?track=" + id;
+    const link = window.location.origin + window.location.pathname + "?track=" + id;
     
-    alert(`Parcel Created 🚀\n\nTracking ID: ${id}\n\nDirect Tracking Link:\n${link}`);
+    // Copy link to clipboard
+    navigator.clipboard.writeText(link).catch(() => {});
 
-    // Clear the form
+    showToast("✅ Parcel Created Successfully!");
+
+    // Clear form
     document.getElementById("pid").value = "";
     document.getElementById("pname").value = "";
     document.getElementById("pstatus").selectedIndex = 0;
-
     document.getElementById("pid").focus();
   }).catch((error) => {
     alert("Error creating parcel: " + error.message);
@@ -317,13 +358,14 @@ function updateStatus(id, newStatus){
     });
   });
 
-  alert("Status updated with timeline ✅");
+  showToast("Status updated ✅");
 }
 
 // ==================== Delete Parcel ====================
 function deleteParcel(id){
   if(confirm("Delete this parcel?")){
     db.ref("parcels/" + id).remove();
+    showToast("Parcel deleted");
   }
 }
 
@@ -332,12 +374,31 @@ function render(){
   let list = document.getElementById("list");
   list.innerHTML = "";
 
-  if(parcels.length === 0){
-    list.innerHTML = `<p class="empty-state">No parcels yet. Add one above 👆</p>`;
+  // Update Overview Stats
+  let total = parcels.length;
+  let pending = parcels.filter(p => p.status === "Pending").length;
+  let transit = parcels.filter(p => p.status === "In Transit").length;
+  let delivered = parcels.filter(p => p.status === "Delivered").length;
+
+  document.getElementById("totalCount").innerText = total;
+  document.getElementById("pendingCount").innerText = pending;
+  document.getElementById("transitCount").innerText = transit;
+  document.getElementById("deliveredCount").innerText = delivered;
+
+  // Search filter
+  let search = document.getElementById("searchBox")?.value?.toLowerCase() || "";
+
+  let filteredParcels = parcels.filter(p => 
+    p.id.toLowerCase().includes(search) || 
+    p.name.toLowerCase().includes(search)
+  );
+
+  if(filteredParcels.length === 0){
+    list.innerHTML = `<p class="empty-state">No parcels found matching your search.</p>`;
     return;
   }
 
-  parcels.forEach(p => {
+  filteredParcels.forEach(p => {
     let cls = p.status === "Pending" ? "pending" :
               p.status === "In Transit" ? "transit" : "delivered";
 
@@ -363,6 +424,8 @@ function render(){
 function track(){
   let id = document.getElementById("trackId").value.trim().toUpperCase();
   let res = document.getElementById("result");
+
+  res.innerHTML = "<p>🔄 Checking parcel...</p>";
 
   let f = parcels.find(p => p.id === id);
 
@@ -423,21 +486,6 @@ function track(){
   }
 }
 
-// ==================== AUTO TRACK FROM URL (Improved) ====================
-window.onload = function(){
-  const params = new URLSearchParams(window.location.search);
-  const trackIdParam = params.get("track");
-
-  if(trackIdParam){
-    go("customer");
-    document.getElementById("trackId").value = trackIdParam.toUpperCase();
-
-    setTimeout(() => {
-      track();
-    }, 1000);
-  }
-};
-
 // ==================== Firebase Real-time Listener ====================
 db.ref("parcels").on("value", snap => {
   parcels = [];
@@ -447,6 +495,18 @@ db.ref("parcels").on("value", snap => {
   }
   render();
 });
+
+// ==================== Auto Track from URL Parameter ====================
+window.onload = function(){
+  let params = new URLSearchParams(window.location.search);
+  let trackId = params.get("track");
+
+  if(trackId){
+    go("customer");
+    document.getElementById("trackId").value = trackId.toUpperCase();
+    setTimeout(track, 800);
+  }
+};
 
 </script>
 
