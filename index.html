@@ -8,9 +8,10 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
+  font-family:Arial, sans-serif;
   background:linear-gradient(135deg,#0a1f44,#007BFF);
   color:white;
+  min-height:100vh;
 }
 
 .screen{
@@ -33,18 +34,13 @@ body{
   padding: 20px;
   margin: 12px 0;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  transition: 0.3s;
   width: 100%;
   max-width: 420px;
 }
 
-.card:hover{
-  transform: translateY(-3px);
-}
-
-input,select,button{
+input, select, button{
   width:100%;
-  padding:10px;
+  padding:12px;
   margin:8px 0;
   border:none;
   border-radius:8px;
@@ -65,8 +61,6 @@ button:hover{
 
 .delete-btn {
   background: #ff4444;
-  color: white;
-  margin-top: 10px;
 }
 
 .stat-box {
@@ -82,67 +76,10 @@ button:hover{
   color: #ffd700;
 }
 
-.stat-box p {
-  margin: 0;
-  opacity: 0.8;
-  font-size: 14px;
-}
+.pending { background: rgba(255,215,0,0.2); color: gold; padding: 4px 10px; border-radius: 20px; }
+.transit  { background: rgba(255,165,0,0.2); color: orange; padding: 4px 10px; border-radius: 20px; }
+.delivered{ background: rgba(0,255,100,0.2); color: lightgreen; padding: 4px 10px; border-radius: 20px; }
 
-h2 span{
-  color:yellow;
-}
-
-hr{
-  border:0;
-  border-top:1px solid rgba(255,255,255,0.2);
-  margin:10px 0;
-}
-
-.pending{
-  background: rgba(255,215,0,0.2);
-  color: gold;
-  padding: 4px 10px;
-  border-radius: 20px;
-}
-
-.transit{
-  background: rgba(255,165,0,0.2);
-  color: orange;
-  padding: 4px 10px;
-  border-radius: 20px;
-}
-
-.delivered{
-  background: rgba(0,255,100,0.2);
-  color: lightgreen;
-  padding: 4px 10px;
-  border-radius: 20px;
-}
-
-.empty-state {
-  color: rgba(255,255,255,0.6);
-  font-style: italic;
-  padding: 20px 0;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 20px;
-  width: 100%;
-}
-
-.timeline p {
-  margin: 8px 0;
-  padding-left: 10px;
-  border-left: 3px solid #ff9500;
-}
-
-.timeline small {
-  color: rgba(255,255,255,0.7);
-  font-size: 0.85em;
-}
-
-/* Toast Notification */
 #toast {
   position: fixed;
   top: 20px;
@@ -161,22 +98,23 @@ hr{
 
 <body>
 
-<!-- Toast Notification -->
 <div id="toast"></div>
 
-<div class="header">
+<div class="header" style="text-align:center; margin-bottom:20px; width:100%;">
   <h1>🚚 Yagi Logistics</h1>
-  <p style="opacity:0.7; margin:5px 0 0 0;">Real-Time Delivery Tracking System</p>
+  <p style="opacity:0.7;">Real-Time Delivery Tracking System</p>
 </div>
 
+<!-- HOME SCREEN -->
 <div id="home" class="screen active">
-  <h2>Yagi <span>Logistics</span></h2>
   <div class="card">
-    <button onclick="go('login')">Admin Login</button>
-    <button onclick="go('customer')">Track Package</button>
+    <h2>Yagi <span style="color:yellow;">Logistics</span></h2>
+    <button onclick="go('login')">🔐 Admin Login</button>
+    <button onclick="go('customer')">📦 Track Package</button>
   </div>
 </div>
 
+<!-- ADMIN LOGIN -->
 <div id="login" class="screen">
   <div class="card">
     <h3>🔐 Admin Access</h3>
@@ -188,50 +126,40 @@ hr{
   </div>
 </div>
 
+<!-- ADMIN DASHBOARD -->
 <div id="admin" class="screen">
   <h2>📊 Admin Dashboard</h2>
 
-  <!-- Business Overview -->
+  <!-- Stats -->
   <div class="card">
     <h3>📊 Business Overview</h3>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
-      <div class="stat-box">
-        <h3 id="totalCount">0</h3>
-        <p>Total Parcels</p>
-      </div>
-      <div class="stat-box">
-        <h3 id="pendingCount">0</h3>
-        <p>Pending</p>
-      </div>
-      <div class="stat-box">
-        <h3 id="transitCount">0</h3>
-        <p>In Transit</p>
-      </div>
-      <div class="stat-box">
-        <h3 id="deliveredCount">0</h3>
-        <p>Delivered</p>
-      </div>
+      <div class="stat-box"><h3 id="totalCount">0</h3><p>Total Parcels</p></div>
+      <div class="stat-box"><h3 id="pendingCount">0</h3><p>Pending</p></div>
+      <div class="stat-box"><h3 id="transitCount">0</h3><p>In Transit</p></div>
+      <div class="stat-box"><h3 id="deliveredCount">0</h3><p>Delivered</p></div>
     </div>
   </div>
 
+  <!-- Add New Parcel -->
   <div class="card">
     <h3>➕ Add New Parcel</h3>
     <input id="pid" placeholder="Tracking ID (optional)">
     <input id="pname" placeholder="Customer Name">
-    
     <select id="pstatus">
       <option>Pending</option>
       <option>In Transit</option>
       <option>Delivered</option>
     </select>
-
     <button onclick="addParcel()">Create Parcel</button>
   </div>
 
+  <!-- Search -->
   <div class="card">
     <input id="searchBox" placeholder="🔍 Search by ID or Name" oninput="render()">
   </div>
 
+  <!-- Parcel List -->
   <div class="card">
     <h3>📦 Parcel Management</h3>
     <div id="list"></div>
@@ -240,35 +168,38 @@ hr{
   <button onclick="logout()">Logout</button>
 </div>
 
+<!-- CUSTOMER TRACKING -->
 <div id="customer" class="screen">
   <div class="card">
-    <h3>Track Parcel</h3>
-    <input id="trackId" placeholder="Tracking ID">
-    <button onclick="track()">Track</button>
-    <p id="result"></p>
+    <h3>Track Your Package</h3>
+    <input id="trackId" placeholder="Enter Tracking ID">
+    <button onclick="track()">Track Package</button>
+    <div id="result"></div>
     <button onclick="go('home')">⬅ Home</button>
   </div>
 </div>
 
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
 // ==================== Firebase Config ====================
-var firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyBVlxuIxDFLwVLSgPQO7KGgxYiW0IY6BDs",
   authDomain: "yagiparcel.firebaseapp.com",
   databaseURL: "https://yagiparcel-default-rtdb.firebaseio.com",
   projectId: "yagiparcel",
 };
 
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
 
-// ==================== Global Variables ====================
+// ==================== Variables ====================
 let parcels = [];
-const ADMIN_EMAIL = "helloyagi1998@email.com";
+const ADMIN_EMAIL = "helloyagi1998@gmail.com";
 
 // ==================== Navigation ====================
 function go(screen){
@@ -276,96 +207,107 @@ function go(screen){
   document.getElementById(screen).classList.add("active");
 }
 
-// ==================== Toast Function ====================
+// ==================== Toast ====================
 function showToast(msg){
-  let t = document.getElementById("toast");
+  const t = document.getElementById("toast");
   t.innerText = msg;
   t.style.display = "block";
   setTimeout(() => t.style.display = "none", 3000);
 }
 
-// ==================== Auth State Listener ====================
-firebase.auth().onAuthStateChanged(user => {
-  if(user){
-    go("admin");
+// ==================== Auth State ====================
+auth.onAuthStateChanged(user => {
+  if (user) {
+    if (user.email === ADMIN_EMAIL) {
+      go("admin");
+    } else {
+      auth.signOut();
+      go("home");
+      showToast("Access denied. Not an admin.");
+    }
   } else {
     go("home");
   }
 });
 
-// ==================== Login ====================
+// ==================== Updated Login Function ====================
 function login(){
-  let email = document.getElementById("email").value.trim();
-  let password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
   if(!email || !password){
-    showToast("Please fill all fields ❌");
+    showToast("⚠️ Fill in all fields");
     return;
   }
 
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then((userCred) => {
-      // Temporary debug logs
-      console.log("Firebase email:", userCred.user.email);
-      console.log("Admin email:", ADMIN_EMAIL);
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
 
-      go("admin");
-      showToast("Login successful ✅");
+      if(user.email !== ADMIN_EMAIL){
+        auth.signOut();
+        showToast("⛔ Not authorized as admin");
+        return;
+      }
 
+      showToast("✅ Welcome Admin");
       document.getElementById("email").value = "";
       document.getElementById("password").value = "";
     })
     .catch(err => {
-      alert("Login failed: " + err.message);
+      let msg = "Login failed";
+
+      if(err.code === "auth/user-not-found") msg = "❌ Account not found";
+      else if(err.code === "auth/wrong-password") msg = "❌ Wrong password";
+      else if(err.code === "auth/invalid-email") msg = "❌ Invalid email";
+
+      showToast(msg);
     });
 }
 
-// ==================== Register ====================
+// ==================== Updated Register Function ====================
 function register(){
-  let email = document.getElementById("email").value.trim();
-  let password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-  if(!email || !password){
-    showToast("Please fill all fields ❌");
+  if(email !== ADMIN_EMAIL){
+    showToast("⛔ Only owner can create admin");
     return;
   }
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      showToast("Account created successfully 🎉");
-    })
-    .catch(err => {
-      alert("Registration failed: " + err.message);
-    });
+  if(!email || !password){
+    showToast("⚠️ Fill all fields");
+    return;
+  }
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => showToast("✅ Admin account created"))
+    .catch(err => showToast("❌ " + err.message));
 }
 
-// ==================== Logout ====================
 function logout(){
-  firebase.auth().signOut();
+  auth.signOut();
   showToast("Logged out 👋");
 }
 
-// ==================== Add New Parcel ====================
+// ==================== Updated Add Parcel Function ====================
 function addParcel(){
   let id = document.getElementById("pid").value.trim().toUpperCase() 
-           || "YAG" + Math.floor(100000 + Math.random()*900000);
+           || "YAG-" + Date.now().toString().slice(-6);
 
-  let name = document.getElementById("pname").value.trim();
-  let status = document.getElementById("pstatus").value;
+  const name = document.getElementById("pname").value.trim();
+  const status = document.getElementById("pstatus").value;
 
-  if(!name){
-    showToast("Customer name required ❌");
-    return;
-  }
+  if(!name) return showToast("Customer name is required");
 
-  let now = new Date();
-  let etaDate = new Date();
+  const now = new Date();
+  const etaDate = new Date();
   etaDate.setDate(now.getDate() + 3);
 
-  db.ref("parcels/"+id).set({
-    id,
-    name,
-    status,
+  db.ref("parcels/" + id).set({
+    id: id,
+    name: name,
+    status: status,
     createdAt: now.toLocaleString(),
     eta: etaDate.toDateString(),
     history: [
@@ -374,37 +316,35 @@ function addParcel(){
   }).then(() => {
     const link = window.location.origin + window.location.pathname + "?track=" + id;
     
-    navigator.clipboard.writeText(link).catch(() => {});
+    showToast("📦 Parcel created! Tap to copy link");
 
-    showToast("✅ Parcel Created Successfully!");
+    setTimeout(() => {
+      if(confirm("Copy tracking link?")){
+        navigator.clipboard.writeText(link);
+      }
+    }, 500);
 
     document.getElementById("pid").value = "";
     document.getElementById("pname").value = "";
     document.getElementById("pstatus").selectedIndex = 0;
-    document.getElementById("pid").focus();
-  }).catch((error) => {
-    alert("Error creating parcel: " + error.message);
-  });
+  }).catch(err => alert("Error: " + err.message));
 }
 
 // ==================== Update Status ====================
 function updateStatus(id, newStatus){
-  let statusText = {
+  const statusText = {
     "Pending": "Package Pending",
     "In Transit": "Package In Transit",
     "Delivered": "Package Delivered"
   };
 
-  let now = new Date().toLocaleString();
+  const now = new Date().toLocaleString();
 
   db.ref("parcels/" + id).once("value", snap => {
-    let data = snap.val();
+    let data = snap.val() || {};
     let history = data.history || [];
 
-    history.push({
-      text: statusText[newStatus],
-      time: now
-    });
+    history.push({ text: statusText[newStatus] || newStatus, time: now });
 
     db.ref("parcels/" + id).update({
       status: newStatus,
@@ -417,42 +357,48 @@ function updateStatus(id, newStatus){
 
 // ==================== Delete Parcel ====================
 function deleteParcel(id){
-  if(confirm("Delete this parcel?")){
+  if(confirm("Delete this parcel permanently?")){
     db.ref("parcels/" + id).remove();
     showToast("Parcel deleted");
   }
 }
 
-// ==================== Render Parcels ====================
+// ==================== Updated Render Function ====================
 function render(){
-  let list = document.getElementById("list");
+  const list = document.getElementById("list");
   list.innerHTML = "";
 
-  let total = parcels.length;
-  let pending = parcels.filter(p => p.status === "Pending").length;
-  let transit = parcels.filter(p => p.status === "In Transit").length;
-  let delivered = parcels.filter(p => p.status === "Delivered").length;
+  // Show message if no parcels
+  if(parcels.length === 0){
+    list.innerHTML = "<p>No parcels yet 🚚</p>";
+    return;
+  }
+
+  const total = parcels.length;
+  const pending = parcels.filter(p => p.status === "Pending").length;
+  const transit = parcels.filter(p => p.status === "In Transit").length;
+  const delivered = parcels.filter(p => p.status === "Delivered").length;
 
   document.getElementById("totalCount").innerText = total;
   document.getElementById("pendingCount").innerText = pending;
   document.getElementById("transitCount").innerText = transit;
   document.getElementById("deliveredCount").innerText = delivered;
 
-  let search = document.getElementById("searchBox")?.value?.toLowerCase() || "";
+  const search = document.getElementById("searchBox").value.toLowerCase();
 
-  let filteredParcels = parcels.filter(p => 
+  const filtered = parcels.filter(p => 
     p.id.toLowerCase().includes(search) || 
     p.name.toLowerCase().includes(search)
   );
 
-  if(filteredParcels.length === 0){
-    list.innerHTML = `<p class="empty-state">No parcels found matching your search.</p>`;
+  if(filtered.length === 0){
+    list.innerHTML = `<p class="empty-state">No parcels found.</p>`;
     return;
   }
 
-  filteredParcels.forEach(p => {
-    let cls = p.status === "Pending" ? "pending" :
-              p.status === "In Transit" ? "transit" : "delivered";
+  filtered.forEach(p => {
+    const cls = p.status === "Pending" ? "pending" :
+                p.status === "In Transit" ? "transit" : "delivered";
 
     list.innerHTML += `
       <div class="card">
@@ -472,74 +418,82 @@ function render(){
   });
 }
 
-// ==================== Track Parcel ====================
+// ==================== Customer Track Function ====================
 function track(){
-  let id = document.getElementById("trackId").value.trim().toUpperCase();
-  let res = document.getElementById("result");
+  const id = document.getElementById("trackId").value.trim().toUpperCase();
+  const res = document.getElementById("result");
 
-  res.innerHTML = "<p>🔄 Checking parcel...</p>";
+  if(!id) return showToast("Please enter a tracking ID");
 
-  let f = parcels.find(p => p.id === id);
+  res.innerHTML = "<p>🔄 Checking...</p>";
 
-  if(f){
-    let timeline = f.history ? f.history.map(h => 
-      `<p>✔ ${h.text} <br><small>${h.time}</small></p>`
-    ).join('') : "<p>No timeline available yet.</p>";
+  db.ref("parcels/" + id).once("value")
+    .then(snapshot => {
+      if(snapshot.exists()){
+        const p = snapshot.val();
+        let timeline = "";
 
-    let today = new Date();
-    let eta = new Date(f.eta);
-    let deliveryNote = "";
+        if(p.history && p.history.length > 0){
+          p.history.forEach(h => {
+            timeline += `<p>✔ ${h.text} <small>${h.time}</small></p>`;
+          });
+        }
 
-    if(f.status !== "Delivered"){
-      let diff = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
-      if(diff <= 0) deliveryNote = "🚚 Out for delivery today!";
-      else if(diff === 1) deliveryNote = "📦 Arriving tomorrow";
-      else deliveryNote = `⏳ ${diff} days remaining`;
-    }
+        const today = new Date();
+        const eta = new Date(p.eta);
+        let deliveryNote = "";
 
-    res.innerHTML = `
-      <div class="card">
-        <h2>📦 ${f.id}</h2>
-        <p><strong>Customer:</strong> ${f.name}</p>
-        <p><strong>📅 Estimated Delivery:</strong> ${f.eta || "Calculating..."}</p>
-        <p>${deliveryNote}</p>
-        <hr>
-        <h4>📍 Delivery Timeline</h4>
-        <div class="timeline">${timeline}</div>
-        <hr>
-        <p><strong>Current Status:</strong> 
-          <span class="${f.status==="Pending"?"pending": f.status==="In Transit"?"transit":"delivered"}">
-            ${f.status}
-          </span>
-        </p>
-      </div>
-    `;
-  } else {
-    res.innerHTML = `<p style="color:#ff6666; text-align:center; padding:15px;">
-      ❌ No parcel found with Tracking ID: <strong>${id}</strong>
-    </p>`;
-  }
+        if(p.status !== "Delivered"){
+          const diff = Math.ceil((eta - today) / (1000 * 60 * 60 * 24));
+          deliveryNote = diff <= 0 ? "🚚 Out for delivery today!" :
+                         diff === 1 ? "📦 Arriving tomorrow" :
+                         `⏳ ${diff} days remaining`;
+        }
+
+        res.innerHTML = `
+          <div class="card">
+            <h2>📦 ${p.id}</h2>
+            <p><strong>Customer:</strong> ${p.name}</p>
+            <p><strong>ETA:</strong> ${p.eta || "N/A"}</p>
+            <p>${deliveryNote}</p>
+            <hr>
+            <h4>📍 Timeline</h4>
+            <div class="timeline">${timeline || "<p>No updates yet.</p>"}</div>
+            <hr>
+            <p><strong>Status:</strong> 
+              <span class="${p.status==="Pending"?"pending":p.status==="In Transit"?"transit":"delivered"}">
+                ${p.status}
+              </span>
+            </p>
+          </div>`;
+      } else {
+        res.innerHTML = `<p style="color:#ff6666; text-align:center;">❌ Parcel not found</p>`;
+      }
+    })
+    .catch(err => res.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`);
 }
 
-// ==================== Firebase Real-time Listener ====================
+// ==================== Real-time Listener ====================
 db.ref("parcels").on("value", snap => {
   parcels = [];
-  let data = snap.val();
+  const data = snap.val();
   if(data){
-    Object.keys(data).forEach(k => parcels.push(data[k]));
+    Object.keys(data).forEach(key => parcels.push(data[key]));
   }
-  render();
+  if(document.getElementById("admin").classList.contains("active")){
+    render();
+  }
 });
 
 // ==================== Auto Track from URL ====================
 window.onload = function(){
-  let params = new URLSearchParams(window.location.search);
-  let trackId = params.get("track");
+  const params = new URLSearchParams(window.location.search);
+  const trackId = params.get("track");
 
   if(trackId){
     go("customer");
     document.getElementById("trackId").value = trackId.toUpperCase();
-    setTimeout(track, 800);
+    setTimeout(track, 600);
   }
 };
 
